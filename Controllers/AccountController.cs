@@ -10,15 +10,22 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Configuration;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Collections.Generic;
 
 namespace Demo1.Controllers
 {
     [Route("api/[controller]/[action]")]
     public class AccountController : Controller
     {
+        private readonly IConfiguration _configuration;
         private readonly UserManager<AppUser> _userManager;
-        public AccountController(UserManager<AppUser> userManager)
+        public AccountController(IConfiguration configuration, UserManager<AppUser> userManager)
         {
+            this._configuration = configuration;
             this._userManager = userManager;
         }
 
@@ -79,40 +86,43 @@ namespace Demo1.Controllers
 
 
         [HttpPost]
-        public async Task<ResultVM> Login([FromBody]LoginVM model)
+        public async Task<JsonResult> Login([FromBody]LoginVM model)
         {
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByNameAsync(model.UserName);
                 if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
                 {
-                    var identity = new ClaimsIdentity(JwtBearerDefaults.AuthenticationScheme);
-                    identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id));
-                    identity.AddClaim(new Claim(ClaimTypes.Name, user.UserName));
-
-                    await HttpContext.SignInAsync(JwtBearerDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-
-                    return new ResultVM
+                    var claims = new List<Claim>
                     {
-                        Status = Status.Success,
-                        Message = "Succesfull login",
-                        Data = model
+                        new Claim(ClaimTypes.NameIdentifier, user.Id),
+                        new Claim(ClaimTypes.Name, user.UserName)
                     };
+
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JwtPrivateKey")));
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var token = new JwtSecurityToken("YOUR_ISSUER_VALUE", "YOUR_AUDIENCE_VALUE", claims, expires: DateTime.Now.AddMinutes(30), signingCredentials: creds);
+                    var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+
+                    return new JsonResult(new { token = tokenString });
                 }
-                return new ResultVM
+                return new JsonResult(new ResultVM
                 {
                     Status = Status.Error,
                     Message = "Invalid data",
                     Data = "Invalid Username or Password"
-                };
+                });
+
             }
             var errors = ModelState.Keys.Select(e => e.ToString());
-            return new ResultVM
+            return new JsonResult(new ResultVM
             {
                 Status = Status.Error,
                 Message = "Invalid data",
                 Data = string.Join(",", errors)
-            };
+            });
+
+
         }
 
 
@@ -142,10 +152,6 @@ namespace Demo1.Controllers
             };
         }
 
-        [HttpPost]
-        public async Task SignOut()
-        {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        }
+
     }
 }
