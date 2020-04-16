@@ -96,12 +96,12 @@ namespace Demo1.Controllers
                     var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.Name, user.UserName)
+                        new Claim(ClaimTypes.Name, user.UserName),
                     };
 
                     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration.GetValue<string>("JwtPrivateKey")));
                     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                    var token = new JwtSecurityToken("YOUR_ISSUER_VALUE", "YOUR_AUDIENCE_VALUE", claims, expires: DateTime.Now.AddMinutes(30), signingCredentials: creds);
+                    var token = new JwtSecurityToken(null, null, claims, expires: DateTime.Now.AddMinutes(30), signingCredentials: creds);
                     var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
 
                     return new JsonResult(new { token = tokenString });

@@ -54,11 +54,10 @@ namespace Demo1
                 {
                     options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        RequireExpirationTime = true,
-                        ValidIssuer = "YOUR_ISSUER_VALUE",
-                        ValidateIssuer = true,
-                        ValidateAudience = false,
                         ValidateLifetime = true,
+                        RequireExpirationTime = true,
+                        ValidateIssuer = false,
+                        ValidateAudience = false,
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetValue<string>("JwtPrivateKey")))
                     };
