@@ -15,8 +15,8 @@ namespace Demo1.Controllers
     [Route("api/[controller]/[action]")]
     public class AccountController : Controller
     {
-        private readonly UserManager<AppUser> _userManager;
-        public AccountController(UserManager<AppUser> userManager)
+        private readonly UserManager<IdentityUser> _userManager;
+        public AccountController(UserManager<IdentityUser> userManager)
         {
             this._userManager = userManager;
         }
@@ -39,7 +39,7 @@ namespace Demo1.Controllers
                     };
                 }
 
-                user = new AppUser
+                user = new IdentityUser
                 {
                     Id = Guid.NewGuid().ToString(),
                     UserName = model.UserName,
