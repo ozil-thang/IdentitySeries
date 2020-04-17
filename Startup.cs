@@ -47,8 +47,10 @@ namespace Demo1
             services.AddDbContext<IdentityDbContext>(options =>
                 options.UseMySql(Configuration.GetValue<string>("MysqlConnectionString"), b => b.MigrationsAssembly("Demo1")));
 
-            services.AddIdentityCore<IdentityUser>(options => { });
-            services.AddScoped<IUserStore<IdentityUser>, UserOnlyStore<IdentityUser, IdentityDbContext>>();
+            services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<IdentityDbContext>()
+                .AddDefaultTokenProviders();
+            
 
             services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
